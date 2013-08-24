@@ -19,6 +19,7 @@ from zope.interface import implements, providedBy
 import os
 import pwd
 import hashlib
+import shlex
 
 class settings: pass
 settings = settings()
@@ -37,23 +38,34 @@ class KeySession:
 
     def __init__(self, avatar):
         self.avatar = avatar
+        self.pty_size = None
 
-    def execCommand(self, proto, cmd):
+    def execCommand(self, proto, exec_cmd):
         username, key_id = self.avatar.avatarId
         if key_id != '5f:62:fb:ec:4f:e1:82:e5:36:7d:76:2e:2c:50:8a:a5:e7:65:a5:6e:84:cb:11:b4:3b:a6:50:c1:b2:4c:a7:ae':
             raise ValueError('invalid key')
+
         print username, key_id
-        environ = {}
-        proto.write('foobar')
+        uid = int(username)
+        cmd = ['/usr/local/bin/graveluser',
+               'attach', str(uid), '--']
+        if self.pty_size:
+            cmd += ['env', 'ROWS=%d' % self.pty_size[0], 'COLS=%d' % self.pty_size[1],
+                    '--', '/gravel/pkg/gravel-userd-ssh/pty-helper']
+        cmd += shlex.split(exec_cmd)
         self.pty = reactor.spawnProcess(proto,
-                                        '/bin/ls', ['ls'], environ, '/')
+                                        cmd[0], cmd, os.environ, '/')
         self.avatar.conn.transport.transport.setTcpNoDelay(1)
 
-    #def getPty(self, term, windowSize, modes):
-    #    print term, windowSize, modes
+    def getPty(self, term, windowSize, modes):
+        self.pty_size = windowSize
+        self.pty_term = term
 
-    #def openShell(self, pp):
-    #    print pp
+    def eofReceived(self):
+        self.pty.signalProcess('HUP')
+
+    def openShell(self, proto):
+        self.execCommand(proto, 'bash')
 
     def closed(self):
         pass
