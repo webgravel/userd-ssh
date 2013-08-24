@@ -1,0 +1,6 @@
+#!/bin/bash
+
+dir=$2
+path=/gravel/pkg/gravel-userd-ssh
+mkdir $dir/$path
+mount --bind $path $dir/$path
