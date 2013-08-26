@@ -3,7 +3,7 @@ requires: gravel-common gravel-userd
 requires-apt: python-twisted-conch
 
 preinstall: make
-start: ./start.sh
+start: ./start.py
 
 symlinks:
 - [updatecustom.py, /gravel/pkg/gravel-userd/updatecustom.d/ssh]
