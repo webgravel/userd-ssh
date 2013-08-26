@@ -12,6 +12,7 @@ import gravelnode
 key_dir = os.path.join('/gravel/system/node/ssh_keys')
 
 if not os.path.exists(key_dir + '/id_rsa'):
+    print 'fetching server keys from master'
     pub = gravelnode.master_call('get', 'sshd_rsa.pub', check_output=True)
     priv = gravelnode.master_call('get', 'sshd_rsa', check_output=True)
 
@@ -28,4 +29,6 @@ if not os.path.exists(key_dir + '/id_rsa'):
     with open(key_dir + '/id_rsa.pub', 'w') as f:
         f.write(pub)
 
-sshd.main(key_dir, port=22)
+port = 22
+print 'running sshd.py on port %d' % port
+sshd.main(key_dir, port=port)

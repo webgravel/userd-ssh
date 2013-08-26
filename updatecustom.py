@@ -16,12 +16,20 @@ args = parser.parse_args()
 
 user = users.User(args.uid)
 
-# todo: remove old domains
+for prop in user.data.old_custom.get('ssh', []):
+    username = prop['username']
+    fingerprint = prop['fingerprint']
+    try:
+        info = ssh_info.SSHUserKey(username)
+        del info.data.keys[fingerprint]
+    except KeyError:
+        pass
+    else:
+        info.save()
 
-for prop in user.data.custom.get('web', []):
-    host = prop['host']
-    port = int(prop['port'])
-    domain = domains.Domain(host)
-    domain.data.port = port
-    domain.data.owner = args.uid
-    domain.save()
+for prop in user.data.custom.get('ssh', []):
+    username = prop['username']
+    fingerprint = prop['fingerprint']
+    info = ssh_info.SSHUserKey(username)
+    info.data.keys[fingerprint] = {'uid': args.uid}
+    info.save()

@@ -42,13 +42,8 @@ class KeySession:
         self.pty = None
 
     def execCommand(self, proto, exec_cmd):
-        print 'execCommand', proto, exec_cmd
-        username, key_id = self.avatar.avatarId
-        if key_id != '5f:62:fb:ec:4f:e1:82:e5:36:7d:76:2e:2c:50:8a:a5:e7:65:a5:6e:84:cb:11:b4:3b:a6:50:c1:b2:4c:a7:ae':
-            raise ValueError('invalid key')
-
-        print username, key_id
-        uid = int(username)
+        uid, = self.avatar.avatarId
+        print('execCommand uid=%d cmd=%r' % (uid, exec_cmd))
         cmd = ['/usr/local/bin/graveluser',
                'attach', str(uid), '--']
         if self.pty_size:
@@ -121,8 +116,17 @@ class KeyChecker(object):
 
     def requestAvatarId(self, credentials):
         key = 'ssh-rsa ' + credentials.blob.encode('base64').replace('\n', '')
-        id = get_ssh_key_fingerprint(key)
-        return (credentials.username, id)
+        fingerprint = get_ssh_key_fingerprint(key)
+
+        try:
+            options = ssh_info.SSHUserKey.get(credentials.username, fingerprint)
+        except KeyError:
+            raise
+        except:
+            import traceback
+            traceback.print_exc()
+
+        return (options['uid'], )
 
 def main(keys_path, port):
     with open(keys_path + '/id_rsa') as privateBlobFile:
