@@ -39,7 +39,7 @@ class KeySession:
     def __init__(self, avatar):
         self.avatar = avatar
         self.pty_size = None
-        self.pty = None
+        self.proc = None
 
     def execCommand(self, proto, exec_cmd):
         uid, = self.avatar.avatarId
@@ -52,7 +52,7 @@ class KeySession:
         else:
             cmd += ['sh', '-c', exec_cmd]
         print cmd
-        self.pty = reactor.spawnProcess(ProcessExitWorkaroundWrapper(proto),
+        self.proc = reactor.spawnProcess(ProcessExitWorkaroundWrapper(proto),
                                         cmd[0], cmd, os.environ, '/')
 
         self.avatar.conn.transport.transport.setTcpNoDelay(1)
@@ -65,18 +65,18 @@ class KeySession:
         print 'windowChanged', windowSize
 
     def eofReceived(self):
-        if self.pty:
-            self.pty.closeStdin()
+        if self.proc:
+            self.proc.closeStdin()
 
     def openShell(self, proto):
         self.execCommand(proto, 'bash')
 
     def closed(self):
         try:
-            self.pty.signalProcess('HUP')
+            self.proc.signalProcess('HUP')
         except (OSError, ProcessExitedAlready):
             pass
-        self.pty.loseConnection()
+        self.proc.loseConnection()
 
 class ProcessExitWorkaroundWrapper(object):
     '''
