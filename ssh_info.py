@@ -1,6 +1,6 @@
 import graveldb
 
-PATH = '/gravel/system/node'
+PATH = '/gravel/system/nodecache'
 
 class SSHUserKey(graveldb.Table('sshuserkeys', PATH)):
     default = dict(keys={})
