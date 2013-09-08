@@ -18,10 +18,10 @@ user = users.User(args.uid)
 
 for prop in user.data.old_custom.get('ssh', []):
     username = prop['username']
-    fingerprint = prop['fingerprint']
+    authdata = prop['authdata']
     try:
         info = ssh_info.SSHUserKey(username)
-        del info.data.keys[fingerprint]
+        del info.data.keys[authdata]
     except KeyError:
         pass
     else:
@@ -29,7 +29,7 @@ for prop in user.data.old_custom.get('ssh', []):
 
 for prop in user.data.custom.get('ssh', []):
     username = prop['username']
-    fingerprint = prop['fingerprint']
+    authdata = prop['authdata']
     info = ssh_info.SSHUserKey(username)
-    info.data.keys[fingerprint] = {'uid': args.uid}
+    info.data.keys[authdata] = {'uid': args.uid}
     info.save()
