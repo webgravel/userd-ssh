@@ -2,7 +2,7 @@ from twisted.cred.portal import Portal
 from twisted.cred.checkers import FilePasswordDB
 from twisted.conch.checkers import SSHPublicKeyDatabase
 from twisted.conch.ssh.factory import SSHFactory
-from twisted.internet import reactor
+from twisted.internet import reactor, defer
 from twisted.conch.ssh.keys import Key
 from twisted.conch.interfaces import IConchUser
 from twisted.conch.avatar import ConchUser
@@ -13,7 +13,6 @@ from twisted.cred.error import UnauthorizedLogin, UnhandledCredentials
 from twisted.python import components
 from twisted.conch.ssh import session
 from twisted.cred import portal
-from twisted.internet import reactor
 from twisted.internet.error import ProcessExitedAlready
 from zope.interface import implements, providedBy
 
@@ -21,6 +20,7 @@ import os
 import pwd
 import hashlib
 import shlex
+import crypt
 
 import ssh_info
 
@@ -121,7 +121,29 @@ class KeyChecker(object):
         try:
             options = ssh_info.SSHUserKey.get(credentials.username, fingerprint)
         except KeyError:
-            raise
+            return defer.fail(UnauthorizedLogin())
+        except:
+            import traceback
+            traceback.print_exc()
+
+        return (options['uid'], )
+
+class PasswordChecker(object):
+    implements(ICredentialsChecker)
+
+    credentialInterfaces = (IUsernamePassword,)
+
+    def requestAvatarId(self, credentials):
+        username = credentials.username
+        password = credentials.password
+
+        def checker(token):
+            return crypt.crypt(password, token) == token
+
+        try:
+            options = ssh_info.SSHUserKey.get_with_checker(username, checker)
+        except KeyError:
+            return defer.fail(UnauthorizedLogin())
         except:
             import traceback
             traceback.print_exc()
@@ -142,6 +164,7 @@ def main(keys_path, port):
     factory.publicKeys = {'ssh-rsa': publicKey}
     factory.portal = Portal(KeyRealm())
     factory.portal.registerChecker(KeyChecker())
+    factory.portal.registerChecker(PasswordChecker())
 
     reactor.listenTCP(port, factory)
     reactor.run()
