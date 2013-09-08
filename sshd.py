@@ -40,17 +40,20 @@ class KeySession:
         self.avatar = avatar
         self.pty_size = None
         self.proc = None
+        self.uid, = self.avatar.avatarId
 
     def execCommand(self, proto, exec_cmd):
-        uid, = self.avatar.avatarId
-        print('execCommand uid=%d cmd=%r' % (uid, exec_cmd))
+        print('execCommand uid=%d cmd=%r' % (self.uid, exec_cmd))
+        self._execCommand(proto, ['sh', '-c', exec_cmd])
+
+    def _execCommand(self, proto, exec_args):
+        uid = self.uid
         cmd = ['/usr/local/bin/graveluser',
                'attach', str(uid), '--']
         if self.pty_size:
             cmd += ['env', 'ROWS=%d' % self.pty_size[0], 'COLS=%d' % self.pty_size[1],
-                    '--', '/gravel/pkg/gravel-userd-ssh/pty-helper', 'bash', '--login']
-        else:
-            cmd += ['sh', '-c', exec_cmd]
+                    '--', '/gravel/pkg/gravel-userd-ssh/pty-helper']
+        cmd += exec_args
         print cmd
         self.proc = reactor.spawnProcess(ProcessExitWorkaroundWrapper(proto),
                                         cmd[0], cmd, os.environ, '/')
@@ -69,7 +72,8 @@ class KeySession:
             self.proc.closeStdin()
 
     def openShell(self, proto):
-        self.execCommand(proto, 'bash')
+        print('openShell uid=%d' % (self.uid, ))
+        self._execCommand(proto, ['bash', '--login'])
 
     def closed(self):
         try:
