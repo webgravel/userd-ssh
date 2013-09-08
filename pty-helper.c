@@ -68,11 +68,11 @@ int main(int argc, char** argv) {
         exit(1);
       }
       if(FD_ISSET(0, &rfds)) {
-        if(!read(0, buff, 1)) exit(0);
+        if(read(0, buff, 1) != 1) exit(0);
         write(master, buff, 1);
       }
       if(FD_ISSET(master, &rfds)) {
-        if(!read(master, buff, 1)) exit(0);
+        if(read(master, buff, 1) != 1) exit(0);
         write(1, buff, 1);
       }
       if(FD_ISSET(master, &xfds)) {
